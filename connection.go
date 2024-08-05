@@ -264,13 +264,23 @@ func (mc *mysqlConn) interpolateParams(query string, args []driver.Value) (strin
 			if v == nil {
 				buf = append(buf, "NULL"...)
 			} else {
-				buf = append(buf, "_binary'"...)
-				if mc.status&statusNoBackslashEscapes == 0 {
-					buf = escapeBytesBackslash(buf, v)
+				if (!mc.cfg.ConvertBinaryToHexLiteral) {
+					buf = append(buf, "_binary'"...)
+					if mc.status&statusNoBackslashEscapes == 0 {
+						buf = escapeBytesBackslash(buf, v)
+					} else {
+						buf = escapeBytesQuotes(buf, v)
+					}
+					buf = append(buf, '\'')
 				} else {
-					buf = escapeBytesQuotes(buf, v)
+					buf = append(buf, "_binary'"...)
+					if mc.status&statusNoBackslashEscapes == 0 {
+						buf = escapeBytesBackslash(buf, v)
+					} else {
+						buf = escapeBytesQuotes(buf, v)
+					}
+					buf = append(buf, '\'')
 				}
-				buf = append(buf, '\'')
 			}
 		case string:
 			buf = append(buf, '\'')
